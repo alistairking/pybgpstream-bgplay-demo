@@ -20,7 +20,7 @@ import collections
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-delay = 1800 # delay every message by 1hr (to simulate RT)
+delay = 1800 # delay every message by 30min (to simulate RT)
 
 clients_cnt = 0
 thread = None
@@ -31,7 +31,7 @@ def generate_stream():
 
     bs.add_interval_filter(calendar.timegm(time.gmtime()) - delay, 0)
     #bs.add_interval_filter(1444780800, 1444780800)
-    bs.add_filter('collector', 'route-views2')
+    bs.add_filter('collector', 'route-views.sg')
     bs.add_filter('record-type', 'updates')
 
     # ask bgpstream for one rib if they asked for a table dump

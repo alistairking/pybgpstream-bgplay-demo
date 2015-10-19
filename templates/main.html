@@ -24,7 +24,13 @@
                     $('#msgs').empty();
 		}
 		//if (msgs < 20)
-    		$('#msgs').append($('<li>').text(msgs + ': ' + JSON.stringify(msg)));
+                $('#msgs').append(
+                    $('<li>').text(
+                        msgs + ': ' +
+                            JSON.stringify(msg) +
+                            ' delay: ' + (((new Date).getTime()/1000) - msg.time)
+                    )
+                );
   	    });
 	    socket.on('bgp_dump', function(msg){
 		if ((++dumps % 20) == 0) {

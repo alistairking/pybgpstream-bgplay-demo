@@ -1,0 +1,42 @@
+<html>
+<head><title>PyBGPStream BGPlay Demo</title></head>
+<body>
+    <h1>PyBGPStream BGPlay Demo</h1>
+    <h2>Messages:</h2>
+    <ul id="msgs"></ul>
+    <hr>
+    <h2>Dumps:</h2>
+    <ul id="dumps"></ul>
+
+    <script type="text/javascript"
+                src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript"
+            src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var url = "http://" + document.domain + ":" + location.port;
+            var socket = io.connect(url + "/bgplay");
+	    var msgs = 0;
+	    var dumpes = 0;
+	    socket.on('bgp_message', function(msg){
+		if ((++msgs % 20) == 0) {
+		    $('#msgs').empty();
+		}
+		//if (msgs < 20)
+    		$('#msgs').append($('<li>').text(msgs + ': ' + JSON.stringify(msg)));
+  	    });
+	    socket.on('bgp_dump', function(msg){
+		if ((++dumps % 20) == 0) {
+		    $('#dumps').empty();
+		}
+    		$('#dumps').append($('<li>').text(dumps + ': ' + JSON.stringify(msg)));
+  	    });
+            socket.emit(
+                'bgp_subscribe',
+                {'resource': '212.22.66.0/24', sendDump: true}
+            );
+        });
+    </script>
+</body>
+</html>

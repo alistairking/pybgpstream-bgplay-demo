@@ -20,7 +20,7 @@ import collections
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-delay = 3600 # delay every message by 1hr (to simulate RT)
+delay = 1800 # delay every message by 1hr (to simulate RT)
 
 clients_cnt = 0
 thread = None
@@ -30,7 +30,7 @@ def generate_stream():
     rec = BGPRecord()
 
     bs.add_interval_filter(calendar.timegm(time.gmtime()) - delay, 0)
-    #bs.add_interval_filter(1444780800, 1444780810)
+    #bs.add_interval_filter(1444780800, 1444780800)
     bs.add_filter('collector', 'route-views2')
     bs.add_filter('record-type', 'updates')
 
@@ -41,32 +41,17 @@ def generate_stream():
 
     bs.start()
 
-    msg_buffer = collections.deque()
-    buffer_time = 0
-
     print('Beginning to read from stream')
     #if send_dump: print('First getting a RIB dump')
     while(bs.get_next_record(rec)):
         elem = rec.get_next_elem()
         while(elem):
-	    if buffer_time < elem.time and len(msg_buffer):
-	        # sleep until it is time to send this second
-	        now = calendar.timegm(time.gmtime())
-	        sim_time = now - delay
-	        if elem.time > sim_time:
-		    time.sleep(buffer_time - sim_time)
-		elif sim_time - elem.time > 60:
-		    print('>60s behind sim time')
+            # sleep until it is time to send this second
+            now = calendar.timegm(time.gmtime())
+            sim_time = now - delay
+            if elem.time > sim_time:
+                time.sleep(elem.time - sim_time)
 
-		# send the messages in the buffer
-		# we have 1 second to do so
-		time_per_msg = 0.6/len(msg_buffer)
-		while(len(msg_buffer)):
-		    socketio.emit('bgp_message', msg_buffer.popleft(),
-                                  namespace='/bgplay')#msg['prefix'])
-		    time.sleep(time_per_msg)
-
-	    buffer_time = elem.time
             #if elem.type == 'R':
 		#msg = {
 		#    'type': elem.type,
@@ -83,9 +68,8 @@ def generate_stream():
 		}
 		if elem.type == 'A':
 		    msg['as-path'] = elem.fields['as-path']
-                #socketio.emit('bgp_message', msg, namespace='/bgplay')
-		msg_buffer.append(msg)
-	    #time.sleep(0.001) # don't flood the connection
+                socketio.emit('bgp_message', msg,
+                              namespace='/bgplay')#, room=msg['prefix'])
             elem = rec.get_next_elem()
 
 @app.route('/')

@@ -21,7 +21,7 @@
 	    var dumpes = 0;
 	    socket.on('bgp_message', function(msg){
 		if ((++msgs % 20) == 0) {
-		    $('#msgs').empty();
+                    $('#msgs').empty();
 		}
 		//if (msgs < 20)
     		$('#msgs').append($('<li>').text(msgs + ': ' + JSON.stringify(msg)));
@@ -34,7 +34,7 @@
   	    });
             socket.emit(
                 'bgp_subscribe',
-                {'resource': '212.22.66.0/24', sendDump: true}
+                {'resource': '195.128.159.0/24', sendDump: true}
             );
         });
     </script>

@@ -28,7 +28,8 @@
                     $('<li>').text(
                         msgs + ': ' +
                             JSON.stringify(msg) +
-                            ' delay: ' + (((new Date).getTime()/1000) - msg.time)
+                            ' delay: ' +
+                            (((new Date).getTime()/1000) - msg.timestamp)
                     )
                 );
   	    });
@@ -36,11 +37,20 @@
 		if ((++dumps % 20) == 0) {
 		    $('#dumps').empty();
 		}
-    		$('#dumps').append($('<li>').text(dumps + ': ' + JSON.stringify(msg)));
+                $('#dumps').append(
+                    $('<li>').text(
+                        dumps + ': ' + JSON.stringify(msg)
+                    )
+                );
   	    });
             socket.emit(
                 'bgp_subscribe',
-                {'resource': '195.128.159.0/24', sendDump: true}
+                {
+                    // omitting resource gives us everything
+                    //resource: '195.128.159.0/24',
+                    sendDump: false,
+                    enrichPaths: false
+                }
             );
         });
     </script>

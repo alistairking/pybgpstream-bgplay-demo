@@ -11,15 +11,28 @@ import collections
 app = Flask(__name__)
 socketio = SocketIO(app)
 delay = 1800 # delay every message by 30min (to simulate RT)
-clients_cnt = 0
-thread = None
+
+def elem2bgplay(elem):
+    msg = {
+        'type': elem.type,
+        'timestamp': elem.time,
+        'target': {
+            'prefix': elem.fields['prefix'],
+            },
+        #'community': not-supported,
+    }
+    if elem.type == 'A':
+        msg['path'] = [
+            {'owner': str(asn), 'as_number': str(asn)}
+            for asn in elem.fields['as-path'].split()
+        ]
+    return msg
 
 def generate_stream():
     bs = BGPStream()
     rec = BGPRecord()
 
     bs.add_interval_filter(calendar.timegm(time.gmtime()) - delay, 0)
-    #bs.add_interval_filter(1444780800, 1444780800)
     bs.add_filter('collector', 'route-views.sg')
     bs.add_filter('record-type', 'updates')
     bs.start()
@@ -35,15 +48,14 @@ def generate_stream():
                 time.sleep(elem.time - sim_time)
 
             if elem.type == 'A' or elem.type == 'W':
-		msg = {
-		    'type': elem.type,
-		    'prefix': elem.fields['prefix'],
-		    'time': elem.time
-		}
-		if elem.type == 'A':
-		    msg['as-path'] = elem.fields['as-path']
+                msg = elem2bgplay(elem)
                 socketio.emit('bgp_message', msg,
-                              namespace='/bgplay')#, room=msg['prefix'])
+                              namespace='/bgplay',
+                              room=elem.fields['prefix'])
+                socketio.emit('bgp_message', msg,
+                              namespace='/bgplay',
+                              room='all')
+
             elem = rec.get_next_elem()
 
 @app.route('/')
@@ -52,18 +64,15 @@ def main():
 
 @socketio.on('bgp_subscribe', namespace='/bgplay')
 def ws_bgp_subscribe(message):
-    # what prefix are they interested in?
-    pfx = message['resource']
-    send_dump = message['sendDump']
-    # assign them to a room
-    #join_room(pfx)
+    # are they interested in a prefix?
+    if 'resource' in message:
+        join_room(message['resource'])
+    else:
+        join_room('all')
 
-    # if this is our first client, then start up the bgpstream thread
-    global clients_cnt
-    clients_cnt += 1
-    if clients_cnt == 1:
-    	thread = threading.Thread(target=generate_stream)
-    	thread.start()
+    # TODO: support table dumps
 
 if __name__ == '__main__':
+    thread = threading.Thread(target=generate_stream)
+    thread.start()
     socketio.run(app, host='gibi.caida.org', port=5000)

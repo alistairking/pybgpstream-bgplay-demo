@@ -25,12 +25,12 @@
 		}
 		//if (msgs < 20)
                 $('#msgs').append(
-                    $('<li>').text(
-                        msgs + ': ' +
-                            JSON.stringify(msg) +
-                            ' delay: ' +
+                    $('<li>').html('<pre><code>' +
+                        msgs + ': \n' +
+                            JSON.stringify(msg, null, '  ') +
+                            ' \ndelay: ' +
                             (((new Date).getTime()/1000) - msg.timestamp)
-                    )
+                    + '</code></pre>')
                 );
   	    });
 	    socket.on('bgp_dump', function(msg){

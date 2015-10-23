@@ -12,7 +12,7 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 delay = 1800 # delay every message by 30min (to simulate RT)
 
-def elem2bgplay(elem):
+def elem2bgplay(rec, elem):
     msg = {
         'type': elem.type,
         'timestamp': elem.time,
@@ -20,6 +20,14 @@ def elem2bgplay(elem):
             'prefix': elem.fields['prefix'],
             },
         #'community': not-supported,
+
+	'source': {
+	    'as_number': elem.peer_asn,
+	    'ip': elem.peer_address,
+	    'project': rec.project,
+	    'collector': rec.collector,
+	    'id': rec.project + '-' + rec.collector + '-' + str(elem.peer_asn) + '-' + str(elem.peer_address)
+	}
     }
     if elem.type == 'A':
         msg['path'] = [
@@ -48,7 +56,7 @@ def generate_stream():
                 time.sleep(elem.time - sim_time)
 
             if elem.type == 'A' or elem.type == 'W':
-                msg = elem2bgplay(elem)
+                msg = elem2bgplay(rec, elem)
                 socketio.emit('bgp_message', msg,
                               namespace='/bgplay',
                               room=elem.fields['prefix'])
